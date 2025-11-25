@@ -29,8 +29,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const requestPermissions = async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
-    setIsNotificationsEnabledState(status === 'granted');
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      setIsNotificationsEnabledState(status === 'granted');
+    } catch (error) {
+      console.error('Error requesting notification permissions:', error);
+      setIsNotificationsEnabledState(false);
+    }
   };
 
   const loadNotificationSettings = async () => {

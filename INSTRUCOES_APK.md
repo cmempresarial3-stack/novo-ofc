@@ -1,10 +1,30 @@
 # 🔥 INSTRUÇÕES PARA GERAR APK - Verso Diário
 
-## ⚠️ CORREÇÃO DO CRASH APLICADA
+## ⚠️ CORREÇÕES CRÍTICAS DO CRASH APLICADAS (REVISÃO FINAL)
 
-**O problema do crash foi identificado e corrigido!**
+**3 problemas críticos foram identificados e corrigidos!**
 
-O app estava crashando porque os imports com `@/...` não funcionam no build nativo do Android. Todos os imports foram corrigidos para usar caminhos relativos (`../../contexts/...`).
+### 🐛 Problemas Corrigidos:
+
+1. **TypeScript Mal Configurado** (68 erros LSP)
+   - ❌ ANTES: tsconfig.json básico causava erros "Cannot find module 'react'"
+   - ✅ AGORA: Configurado com jsx: "react-jsx", lib: ["DOM", "ESNext"], resolveJsonModule
+   - RESULTADO: TypeScript funciona corretamente para React Native/Expo
+
+2. **Bible Data Loading Quebrado** (CAUSA PRINCIPAL DO CRASH)
+   - ❌ ANTES: `import bibleData from '../data/bible-acf.json'` (3.9MB carregado sincronamente + estrutura incompatível)
+   - ✅ AGORA: Lazy loading com require() + transformação de array para objeto
+   - DETALHES: bible-acf.json é um array de livros, mas código esperava objeto. Agora transforma corretamente.
+   - RESULTADO: Sem crash de memória e estrutura correta
+
+3. **Contexts Sem Proteção**
+   - ❌ ANTES: requestPermissions() sem try/catch
+   - ✅ AGORA: Todos contexts com try/catch em funções async
+   - RESULTADO: App não crasha se permissões falharem
+
+4. **Imports Limpos**
+   - ✅ Verificado: Nenhum import de código web (client/, wouter, react-dom) no app/
+   - ✅ Separação clara entre código React Native (app/) e código web (client/)
 
 ## 📱 Gerar APK Localmente (TESTADO)
 

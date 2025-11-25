@@ -45,6 +45,10 @@ author = "agent"
 task = "workflow.run"
 args = "Expo Info"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start Expo"
+
 [[workflows.workflow]]
 name = "Expo Info"
 author = "agent"
@@ -52,6 +56,17 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "echo \"=== VERSO DIÁRIO - APP MOBILE REACT NATIVE ===\" && echo \"\" && echo \"Este é um projeto MOBILE (React Native + Expo) para geração de APK.\" && echo \"\" && echo \"IMPORTANTE: O Replit é usado apenas como IDE/repositório.\" && echo \"Para executar o app, você precisa:\" && echo \"\" && echo \"1. Baixar o código para sua máquina local\" && echo \"2. Instalar dependências: npm install\" && echo \"3. Iniciar o Expo: npx expo start\" && echo \"4. Escanear QR code com Expo Go no celular\" && echo \"\" && echo \"Para gerar APK:\" && echo \"- EAS Build: eas build --platform android --profile preview\" && echo \"- Build Local: npx expo prebuild + Android Studio\" && echo \"\" && echo \"Consulte o README.md para instruções completas.\" && echo \"\" && sleep infinity"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Start Expo"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm start"
 
 [workflows.workflow.metadata]
 outputType = "console"

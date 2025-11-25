@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
 import * as Speech from 'expo-speech';
-
-// Dynamic Bible loading - loads full ACF data from JSON
-import bibleData from '../data/bible-acf.json';
 
 type BibleVerse = {
   verse: number;
@@ -15,11 +12,41 @@ type BibleVerse = {
 
 type BibleChapter = BibleVerse[];
 
-type BibleBook = Record<string, BibleChapter>;
+type RawBibleBook = {
+  abbrev: string;
+  name: string;
+  chapters: string[][];
+};
 
-type BibleData = Record<string, BibleBook>;
+type BibleData = Record<string, Record<string, BibleChapter>>;
 
-const BIBLE_ACF = bibleData as BibleData;
+let BIBLE_CACHE: BibleData | null = null;
+
+function loadBibleData(): BibleData {
+  if (!BIBLE_CACHE) {
+    try {
+      const rawData: RawBibleBook[] = require('../data/bible-acf.json');
+      
+      BIBLE_CACHE = {};
+      rawData.forEach((book) => {
+        const bookName = book.name;
+        BIBLE_CACHE![bookName] = {};
+        
+        book.chapters.forEach((chapterVerses, chapterIndex) => {
+          const chapterNum = (chapterIndex + 1).toString();
+          BIBLE_CACHE![bookName][chapterNum] = chapterVerses.map((text, verseIndex) => ({
+            verse: verseIndex + 1,
+            text,
+          }));
+        });
+      });
+    } catch (error) {
+      console.error('Error loading Bible data:', error);
+      BIBLE_CACHE = {};
+    }
+  }
+  return BIBLE_CACHE;
+}
 
 export default function BibleReaderScreen() {
   const { isDark } = useTheme();
@@ -31,8 +58,29 @@ export default function BibleReaderScreen() {
   
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [fontSize, setFontSize] = useState(16);
+  const [verses, setVerses] = useState<BibleVerse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const verses = BIBLE_ACF[book]?.[chapterNum] || [];
+  useEffect(() => {
+    const loadChapter = async () => {
+      try {
+        setIsLoading(true);
+        
+        await new Promise(resolve => setTimeout(resolve, 0));
+        
+        const bibleData = loadBibleData();
+        const loadedVerses = bibleData[book]?.[chapterNum] || [];
+        setVerses(loadedVerses);
+      } catch (error) {
+        console.error('Error loading chapter:', error);
+        setVerses([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadChapter();
+  }, [book, chapterNum]);
 
   const speakChapter = async () => {
     if (isSpeaking) {
@@ -115,7 +163,14 @@ export default function BibleReaderScreen() {
 
       {/* Verses */}
       <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {verses.length === 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#8B5CF6" />
+            <Text style={[styles.loadingText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
+              Carregando capítulo...
+            </Text>
+          </View>
+        ) : verses.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="book-outline" size={64} color={isDark ? '#4B5563' : '#D1D5DB'} />
             <Text style={[styles.emptyText, { color: isDark ? '#9CA3AF' : '#6B7280' }]}>
@@ -241,6 +296,15 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    fontSize: 16,
+    marginTop: 16,
   },
   verseContainer: {
     flexDirection: 'row',
